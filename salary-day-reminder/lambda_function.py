@@ -1,4 +1,3 @@
-import os
 import json
 import boto3
 import urllib.request
@@ -8,17 +7,33 @@ from zoneinfo import ZoneInfo
 
 import jpholiday
 
-
 scheduler = boto3.client("scheduler")
+ssm = boto3.client("ssm")
 
-WEBHOOK_URL = os.environ["WEBHOOK_URL"]
-SCHEDULE_NAME = os.environ["SCHEDULE_NAME"]
-TIMEZONE = os.environ["TIMEZONE"]
-SALARY_DAY = int(os.environ["SALARY_DAY"])
-RUN_HOUR = int(os.environ["RUN_HOUR"])
-RUN_MINUTE = int(os.environ["RUN_MINUTE"])
-MESSAGE = os.environ["MESSAGE"]
+PARAM_PATH = "/Lambda/salary-day-reminder"
 
+def load_params():
+    response = ssm.get_parameters_by_path(
+        Path=PARAM_PATH,
+        WithDecryption=False
+    )
+    
+    params = {}
+    for param in response["Parameters"]:
+        key = param["Name"].replace(f"{PARAM_PATH}/", "")
+        params[key] = param["Value"]
+        
+    return params
+
+PARAMS = load_params()
+
+WEBHOOK_URL = PARAMS["WEBHOOK_URL"]
+SCHEDULE_NAME = PARAMS["SCHEDULE_NAME"]
+TIMEZONE = PARAMS["TIMEZONE"]
+SALARY_DAY = int(PARAMS["SALARY_DAY"])
+RUN_HOUR = int(PARAMS["RUN_HOUR"])
+RUN_MINUTE = int(PARAMS["RUN_MINUTE"])
+MESSAGE = PARAMS["MESSAGE"]
 
 def next_salary_day():
 
