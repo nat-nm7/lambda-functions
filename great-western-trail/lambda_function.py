@@ -18,16 +18,21 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <style>
         body {{ font-family: monospace; font-size: 16px; line-height: 1.5; background-color: #f8f9fa; color: #333; padding: 20px; }}
         pre {{ background: white; padding: 15px; border-radius: 5px; border: 1px solid #ddd; white-space: pre-wrap; font-family: monospace; }}
-        .btn {{ display: inline-block; background-color: #007bff; color: white; text-decoration: none; padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 5px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        .seed-info {{ color: #666; margin-bottom: 15px; }}
+        .form-container {{ margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }}
+        .input-seed {{ box-sizing: border-box; height: 44px; padding: 0 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; width: 180px; }}
+        .btn {{ box-sizing: border-box; height: 44px; display: inline-flex; align-items: center; justify-content: center; background-color: #007bff; color: white; text-decoration: none; padding: 0 20px; font-size: 16px; font-weight: bold; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: none; cursor: pointer; font-family: monospace; white-space: nowrap; }}
         .btn:hover {{ background-color: #0056b3; }}
-        .seed-info {{ color: #666; margin-bottom: 10px; }}
     </style>
 </head>
 <body>
     <pre>{content}</pre>
     <hr>
     <div class="seed-info">Seed: {seed_value}</div>
-    <a href="{base_url}" class="btn">引き直す</a>
+    <form action="{base_url}" method="get" class="form-container">
+        <input type="text" name="seed" class="input-seed" placeholder="シード（空欄可）">
+        <button type="submit" class="btn">引き直す</button>
+    </form>
 </body>
 </html>"""
 
@@ -117,7 +122,7 @@ def lambda_handler(event, context):
 
     current_base_url = f"https://{domain_name}{raw_path}"
 
-    if seed_param:
+    if seed_param and seed_param.strip() != "":
         logger.info(f"Seed detected. Recreating map with seed: {seed_param}")
 
         main_text = generate_main_text(seed_param)
@@ -141,7 +146,7 @@ def lambda_handler(event, context):
         new_seed = str(random.randint(1, 99999999))
         redirect_url = f"{current_base_url}?seed={new_seed}"
 
-        logger.info(f"First access. Generating seed [{new_seed}] and redirecting to {redirect_url}")
+        logger.info(f"First access or empty seed. Generating seed [{new_seed}] and redirecting to {redirect_url}")
 
         response = {
             "statusCode": 302,
