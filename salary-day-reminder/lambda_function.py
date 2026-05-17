@@ -1,5 +1,6 @@
 import json
 import boto3
+import logging
 import urllib.request
 
 from datetime import datetime, timedelta
@@ -10,37 +11,51 @@ import jpholiday
 scheduler = boto3.client("scheduler")
 ssm = boto3.client("ssm")
 
-PARAM_PATH = "/Lambda/salary-day-reminder"
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+PARAM_PATH = "/salary-day-reminder"
 
 def load_params():
     response = ssm.get_parameters_by_path(
         Path=PARAM_PATH,
         WithDecryption=False
     )
-    
     params = {}
     for param in response["Parameters"]:
         key = param["Name"].replace(f"{PARAM_PATH}/", "")
         params[key] = param["Value"]
-        
     return params
 
 PARAMS = load_params()
 
-WEBHOOK_URL = PARAMS["WEBHOOK_URL"]
-SCHEDULE_NAME = PARAMS["SCHEDULE_NAME"]
-TIMEZONE = PARAMS["TIMEZONE"]
-SALARY_DAY = int(PARAMS["SALARY_DAY"])
-RUN_HOUR = int(PARAMS["RUN_HOUR"])
-RUN_MINUTE = int(PARAMS["RUN_MINUTE"])
-MESSAGE = PARAMS["MESSAGE"]
+def send_discord():
+
+    payload = {
+        "content": PARAMS["MESSAGE"]
+    }
+
+    req = urllib.request.Request(
+        PARAMS["WEBHOOK_URL"],
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0"
+        },
+        method="POST"
+    )
+
+    urllib.request.urlopen(req)
 
 def next_salary_day():
 
-    now = datetime.now(ZoneInfo(TIMEZONE))
+    now = datetime.now(ZoneInfo(PARAMS["TIMEZONE"]))
 
     year = now.year
     month = now.month + 1
+    day = int(PARAMS["SALARY_DAY"])
+    hour = int(PARAMS["RUN_HOUR"])
+    minute = int(PARAMS["RUN_MINUTE"])
 
     if month == 13:
         year += 1
@@ -49,10 +64,10 @@ def next_salary_day():
     dt = datetime(
         year,
         month,
-        SALARY_DAY,
-        RUN_HOUR,
-        RUN_MINUTE,
-        tzinfo=ZoneInfo(TIMEZONE)
+        day,
+        hour,
+        minute,
+        tzinfo=ZoneInfo(PARAMS["TIMEZONE"])
     )
 
     while True:
@@ -69,45 +84,24 @@ def next_salary_day():
 
     return dt
 
-
-def send_discord():
-
-    payload = {
-        "content": MESSAGE
-    }
-
-    req = urllib.request.Request(
-        WEBHOOK_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0"
-        },
-        method="POST"
-    )
-
-    urllib.request.urlopen(req)
-
-
 def update_schedule(dt):
 
     current = scheduler.get_schedule(
-        Name=SCHEDULE_NAME
+        Name=PARAMS["SCHEDULE_NAME"]
     )
 
     scheduler.update_schedule(
-        Name=SCHEDULE_NAME,
+        Name=PARAMS["SCHEDULE_NAME"],
         FlexibleTimeWindow={
             "Mode": "OFF"
         },
         ScheduleExpression=(
             f"at({dt.strftime('%Y-%m-%dT%H:%M:%S')})"
         ),
-        ScheduleExpressionTimezone=TIMEZONE,
+        ScheduleExpressionTimezone=PARAMS["TIMEZONE"],
         State="ENABLED",
         Target=current["Target"]
     )
-
 
 def lambda_handler(event, context):
 
@@ -116,3 +110,5 @@ def lambda_handler(event, context):
     next_dt = next_salary_day()
 
     update_schedule(next_dt)
+
+    logger.info(f"schedule updated: {next_dt.isoformat()}")
