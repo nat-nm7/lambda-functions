@@ -106,9 +106,8 @@ def update_schedule(dt):
 def lambda_handler(event, context):
 
     send_discord()
+    logger.info("discord notification sent")
 
     next_dt = next_salary_day()
-
     update_schedule(next_dt)
-
     logger.info(f"schedule updated: {next_dt.isoformat()}")
