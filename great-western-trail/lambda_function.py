@@ -23,7 +23,7 @@ def lambda_handler(event, context):
     private_tiles_first_half = []  # 1〜5用
     private_tiles_second_half = [] # 6〜10用
     expansion_tiles = [] # 11〜12用
-    
+
     for i in range(1, 13):
         side = random.choice(["a", "b"])
         tile_str = f"{i:2d}{side}" # 1桁の数字の前に半角スペースを入れて揃える(例: " 1a")
