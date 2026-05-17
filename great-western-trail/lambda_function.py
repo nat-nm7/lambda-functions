@@ -114,6 +114,7 @@ def lambda_handler(event, context):
     raw_path = event.get("rawPath", "/").strip()
 
     if "favicon.ico" in raw_path:
+        logger.info(f"Favicon request detected for path: {raw_path}. Returning 204 No Content.")
         response = {
             "statusCode": 204,
             "body": ""
