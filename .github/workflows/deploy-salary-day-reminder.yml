@@ -1,4 +1,4 @@
-﻿name: Deploy to AWS Lambda
+﻿name: Deploy salary-day-reminder to AWS Lambda
 
 on:
   push:

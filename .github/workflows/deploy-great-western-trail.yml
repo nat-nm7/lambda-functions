@@ -1,4 +1,4 @@
-﻿name: Deploy to AWS Lambda
+﻿name: Deploy great-western-trail to AWS Lambda
 
 on:
   push:
