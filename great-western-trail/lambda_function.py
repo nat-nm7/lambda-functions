@@ -147,7 +147,7 @@ def lambda_handler(event, context):
         new_seed = str(random.randint(1, 99999999))
         redirect_url = f"{current_base_url}?seed={new_seed}"
 
-        logger.info(f"First access or empty seed. Generating seed [{new_seed}] and redirecting to {redirect_url}")
+        logger.info(f"Empty seed. Generating seed [{new_seed}] and redirecting to {redirect_url}")
 
         response = {
             "statusCode": 302,
