@@ -31,3 +31,5 @@ jobs:
         code-artifacts-dir: salary-day-reminder
         handler: ${{ vars.LAMBDA_HANDLER }}
         runtime: ${{ vars.LAMBDA_RUNTIME }}
+        role: ${{ secrets.LAMBDA_EXECUTION_ROLE }}
+        publish: true
