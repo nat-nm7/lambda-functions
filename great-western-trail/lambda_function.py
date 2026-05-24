@@ -1,13 +1,11 @@
 import random
-import boto3
 import logging
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
-ssm = boto3.client("ssm")
-
-PARAM_PATH = "/great-western-trail"
+TITLE = "GWTランダムタイルジェネレーター"
+TILE_PRIVATE = "■ 私有建物タイル"
+TILE_EXPANSION = "■ 拡張建物タイル"
+TILE_NEUTRAL = "■ 共有建物タイル"
+FOOTER = "健闘を祈ります！"
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html>
@@ -30,24 +28,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <hr>
     <div class="seed-info">Seed: {seed_value}</div>
     <form action="{base_url}" method="get" class="form-container">
-        <input type="text" name="seed" class="input-seed" placeholder="シード（空欄可）">
+        <input type="text" name="seed" class="input-seed" placeholder="Seed（空欄可）">
         <button type="submit" class="btn">引き直す</button>
     </form>
 </body>
 </html>"""
 
-def load_params():
-    response = ssm.get_parameters_by_path(
-        Path=PARAM_PATH,
-        WithDecryption=False
-    )
-    params = {}
-    for param in response["Parameters"]:
-        key = param["Name"].replace(f"{PARAM_PATH}/", "")
-        params[key] = param["Value"]
-    return params
-
-PARAMS = load_params()
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def generate_main_text(seed_value):
     random.seed(seed_value)
@@ -92,15 +80,15 @@ def generate_main_text(seed_value):
 {n_row}
 
 {footer}""".format(
-        header=PARAMS["MESSAGE_HEADER"],
-        title_private=PARAMS["TITLE_PRIVATE"],
+        header=TITLE,
+        title_private=TILE_PRIVATE,
         p_row1=private_row1,
         p_row2=private_row2,
-        title_expansion=PARAMS["TITLE_EXPANSION"],
+        title_expansion=TILE_EXPANSION,
         e_row=expansion_row,
-        title_neutral=PARAMS["TITLE_NEUTRAL"],
+        title_neutral=TILE_NEUTRAL,
         n_row=neutral_row,
-        footer=PARAMS["MESSAGE_FOOTER"]
+        footer=FOOTER
     )
 
     return main_text
@@ -129,7 +117,7 @@ def lambda_handler(event, context):
         main_text = generate_main_text(seed_param)
 
         html_body = HTML_TEMPLATE.format(
-            title_text=PARAMS["MESSAGE_HEADER"],
+            title_text=TITLE,
             base_url=current_base_url,
             seed_value=seed_param,
             content=main_text

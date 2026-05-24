@@ -1,57 +1,39 @@
 import json
 import boto3
 import logging
-import urllib.request
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import jpholiday
 
-ssm = boto3.client("ssm")
+NOTIFIER_FUNCTION_NAME = "discord-notifier"
+SCHEDULE_NAME = "salary-day-reminder"
+TIMEZONE = "Asia/Tokyo"
+SALARY_DAY = 25
+CRON_HOUR = 9
+CRON_MINUTE = 0
+
 lambda_client = boto3.client("lambda")
 scheduler = boto3.client("scheduler")
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-PARAM_PATH = "/salary-day-reminder"
-
-def load_params():
-    response = ssm.get_parameters_by_path(
-        Path=PARAM_PATH,
-        WithDecryption=False
-    )
-    params = {}
-    for param in response["Parameters"]:
-        key = param["Name"].replace(f"{PARAM_PATH}/", "")
-        params[key] = param["Value"]
-    return params
-
-PARAMS = load_params()
-
-def send_discord():
-
-    payload = {
-        "webhook_url": PARAMS["WEBHOOK_URL"],
-        "message": PARAMS["MESSAGE"]
-    }
+def send_discord(event):
 
     lambda_client.invoke(
-        FunctionName="discord-notifier",
+        FunctionName=NOTIFIER_FUNCTION_NAME,
         InvocationType="Event",
-        Payload=json.dumps(payload)
+        Payload=json.dumps(event)
     )
 
 def next_salary_day():
 
-    now = datetime.now(ZoneInfo(PARAMS["TIMEZONE"]))
+    now = datetime.now(ZoneInfo(TIMEZONE))
 
     year = now.year
     month = now.month + 1
-    day = int(PARAMS["SALARY_DAY"])
-    hour = int(PARAMS["RUN_HOUR"])
-    minute = int(PARAMS["RUN_MINUTE"])
 
     if month == 13:
         year += 1
@@ -60,10 +42,10 @@ def next_salary_day():
     dt = datetime(
         year,
         month,
-        day,
-        hour,
-        minute,
-        tzinfo=ZoneInfo(PARAMS["TIMEZONE"])
+        SALARY_DAY,
+        CRON_HOUR,
+        CRON_MINUTE,
+        tzinfo=ZoneInfo(TIMEZONE)
     )
 
     while True:
@@ -83,25 +65,25 @@ def next_salary_day():
 def update_schedule(dt):
 
     current = scheduler.get_schedule(
-        Name=PARAMS["SCHEDULE_NAME"]
+        Name=SCHEDULE_NAME
     )
 
     scheduler.update_schedule(
-        Name=PARAMS["SCHEDULE_NAME"],
+        Name=SCHEDULE_NAME,
         FlexibleTimeWindow={
             "Mode": "OFF"
         },
         ScheduleExpression=(
             f"at({dt.strftime('%Y-%m-%dT%H:%M:%S')})"
         ),
-        ScheduleExpressionTimezone=PARAMS["TIMEZONE"],
+        ScheduleExpressionTimezone=TIMEZONE,
         State="ENABLED",
         Target=current["Target"]
     )
 
 def lambda_handler(event, context):
 
-    send_discord()
+    send_discord(event)
     logger.info("Discord notifier invoked")
 
     next_dt = next_salary_day()
