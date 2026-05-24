@@ -8,8 +8,9 @@ from zoneinfo import ZoneInfo
 
 import jpholiday
 
-scheduler = boto3.client("scheduler")
 ssm = boto3.client("ssm")
+lambda_client = boto3.client("lambda")
+scheduler = boto3.client("scheduler")
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -32,20 +33,15 @@ PARAMS = load_params()
 def send_discord():
 
     payload = {
-        "content": PARAMS["MESSAGE"]
+        "webhook_url": PARAMS["WEBHOOK_URL"],
+        "message": PARAMS["MESSAGE"]
     }
 
-    req = urllib.request.Request(
-        PARAMS["WEBHOOK_URL"],
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0"
-        },
-        method="POST"
+    lambda_client.invoke(
+        FunctionName="discord-notifier",
+        InvocationType="Event",
+        Payload=json.dumps(payload)
     )
-
-    urllib.request.urlopen(req)
 
 def next_salary_day():
 
@@ -106,7 +102,7 @@ def update_schedule(dt):
 def lambda_handler(event, context):
 
     send_discord()
-    logger.info("Discord notification sent")
+    logger.info("Discord notifier invoked")
 
     next_dt = next_salary_day()
     update_schedule(next_dt)
