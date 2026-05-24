@@ -1,11 +1,17 @@
 import json
+import logging
 import urllib.request
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 def lambda_handler(event, context):
+    logger.info(f"Received event: {json.dumps(event)}")
 
     webhook_url = event["webhook_url"]
     message = event["message"]
 
+    logger.info("Sending request to Discord Webhook...")
     payload = {
         "content": message,
         "username":"Amazon Web Services",
@@ -23,3 +29,4 @@ def lambda_handler(event, context):
     )
 
     urllib.request.urlopen(req)
+    logger.info("Discord notification completed successfully")

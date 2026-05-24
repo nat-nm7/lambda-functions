@@ -26,9 +26,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <body>
     <pre>{content}</pre>
     <hr>
-    <div class="seed-info">Seed: {seed_value}</div>
+    <div class="seed-info">Random Seed: {seed_value}</div>
     <form action="{base_url}" method="get" class="form-container">
-        <input type="text" name="seed" class="input-seed" placeholder="Seed（空欄可）">
+        <input type="text" name="seed" class="input-seed" placeholder="Random Seed（空欄可）">
         <button type="submit" class="btn">引き直す</button>
     </form>
 </body>
