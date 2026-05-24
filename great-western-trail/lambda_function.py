@@ -18,7 +18,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         pre {{ background: white; padding: 15px; border-radius: 5px; border: 1px solid #ddd; white-space: pre-wrap; font-family: monospace; }}
         .seed-info {{ color: #666; margin-bottom: 15px; }}
         .form-container {{ margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }}
-        .input-seed {{ box-sizing: border-box; height: 44px; padding: 0 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; width: 180px; }}
+        .input-seed {{ box-sizing: border-box; height: 44px; padding: 0 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; width: 210px; }}
         .btn {{ box-sizing: border-box; height: 44px; display: inline-flex; align-items: center; justify-content: center; background-color: #007bff; color: white; text-decoration: none; padding: 0 20px; font-size: 16px; font-weight: bold; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: none; cursor: pointer; font-family: monospace; white-space: nowrap; }}
         .btn:hover {{ background-color: #0056b3; }}
     </style>
